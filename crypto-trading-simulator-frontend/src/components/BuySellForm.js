@@ -1,56 +1,62 @@
 import React, { useState } from 'react';
+import axios from '../utils/axiosInstance';
 
-function BuySellForm({ onTrade, allowedCryptos, portfolio, walletBalance, setWalletBalance }) {
+function BuySellForm({ allowedCryptos, refreshUserData }) {
   const [symbol, setSymbol] = useState('');
   const [amount, setAmount] = useState('');
   const [type, setType] = useState('buy');
-  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-  
+    setMessage('');
+
     const cleanSymbol = symbol.trim().toUpperCase();
-    const valid = allowedCryptos.some(c => c.symbol.toUpperCase() === cleanSymbol);
-  
-    if (!valid) {
-      setError(`'${cleanSymbol}' is not a valid crypto symbol.`);
+    const crypto = allowedCryptos.find(c => c.symbol.toUpperCase() === cleanSymbol);
+
+    if (!crypto) {
+      setMessage(`'${cleanSymbol}' is not a valid crypto symbol.`);
       return;
     }
-  
-    const crypto = allowedCryptos.find(c => c.symbol.toUpperCase() === cleanSymbol);
-    const price = crypto.current_price;
-    const tradeAmount = Number(amount);
-    const totalCost = price * tradeAmount;
-  
-    if (type === 'buy') {
-      if (totalCost > walletBalance) {
-        setError(`Insufficient funds. You need $${totalCost.toFixed(2)}, but have $${walletBalance.toFixed(2)}.`);
-        return;
-      }
-  
-      setWalletBalance(prev => prev - totalCost);
-    } else {
- 
-      const currentOwned = portfolio[cleanSymbol] || 0;
-      if (tradeAmount > currentOwned) {
-        setError(`You only own ${currentOwned.toFixed(4)} ${cleanSymbol}, but tried to sell ${tradeAmount}.`);
-        return;
-      }
-  
-      setWalletBalance(prev => prev + totalCost);
+
+    const tradeAmount = parseFloat(amount);
+    if (isNaN(tradeAmount) || tradeAmount <= 0) {
+      setMessage('Enter a valid positive amount.');
+      return;
     }
-  
-    setError('');
-    onTrade({ symbol: cleanSymbol, amount: tradeAmount, type });
-    setSymbol('');
-    setAmount('');
-    setType('buy');
+
+    const payload = {
+      action: type,
+      coin: crypto.id,
+      amount: tradeAmount,
+      price: crypto.current_price  // Sent from frontend
+    };
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await axios.put('/trade', payload, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setMessage(res.data);
+      setSymbol('');
+      setAmount('');
+      setType('buy');
+
+        if (refreshUserData) {
+    await refreshUserData();
+  }
+
+
+    } catch (err) {
+      const errMsg = err?.response?.data || 'Trade failed.';
+      setMessage(typeof errMsg === 'string' ? errMsg : 'Trade failed.');
+    }
   };
 
   return (
     <form onSubmit={handleSubmit}>
       <h3>Buy/Sell Crypto</h3>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {message && <p style={{ color: /success|ok/i.test(message) ? 'green' : 'red' }}>{message}</p>}
 
       <input
         type="text"

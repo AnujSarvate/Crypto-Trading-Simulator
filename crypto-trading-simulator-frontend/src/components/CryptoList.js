@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios from '../utils/axiosInstance';
 
 function CryptoList() {
   const [cryptoData, setCryptoData] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:8080/api/crypto/list')
+    axios.get('/crypto/list')
       .then(response => setCryptoData(response.data))
       .catch(error => console.error("Error fetching crypto data:", error));
   }, []);

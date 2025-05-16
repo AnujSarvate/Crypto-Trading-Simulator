@@ -1,12 +1,35 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import axios from '../utils/axiosInstance';
 
-function PortfolioPage({ portfolio, cryptoData }) {
+function PortfolioPage({ cryptoData }) {
+  const [portfolio, setPortfolio] = useState({});
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const token = localStorage.getItem('token');
+      try {
+        const res = await axios.get('/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setPortfolio(res.data.portfolio);
+        setWalletBalance(res.data.walletBalance);
+        setError('');
+      } catch (err) {
+        setError('Failed to load user data');
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   const getPriceForSymbol = (symbol) => {
-    const coin = cryptoData.find(c => c.symbol.toUpperCase() === symbol);
+    const coin = cryptoData.find(c => c.id === symbol.toLowerCase());
     return coin?.current_price || 0;
   };
 
-  const portfolioEntries = Object.entries(portfolio).filter(([_, amount]) => amount > 0);
+  const portfolioEntries = Object.entries(portfolio || {}).filter(([_, amount]) => amount > 0);
   const totalValue = portfolioEntries.reduce((total, [symbol, amount]) => {
     const price = getPriceForSymbol(symbol);
     return total + price * amount;
@@ -18,6 +41,9 @@ function PortfolioPage({ portfolio, cryptoData }) {
   return (
     <div>
       <h2>Your Portfolio</h2>
+      <h4>Wallet Balance: ${formatCurrency(walletBalance)}</h4>
+
+      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       {portfolioEntries.length === 0 ? (
         <p>No holdings.</p>
