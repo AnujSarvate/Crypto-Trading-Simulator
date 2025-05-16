@@ -4,13 +4,12 @@ A full-stack React + Spring Boot app that simulates crypto trading with mock por
 
 ## 🧰 Tech Stack
 - Frontend: React, Chart.js, Axios
-- Backend: Spring Boot, CoinGecko API
-- Future: PostgreSQL, JWT Auth
+- Backend: Spring Boot, CoinGecko API, PostgreSQL, JWT Auth
 
 ## 💡 Features
 - Fake trading with real crypto prices
 - Wallet deposits, auto-refreshing prices
-- Planned: User login, per-user portfolio (PostgreSQL)
+- User login, per-user portfolio (PostgreSQL)
 
 ## 🚀 To Run Locally
 
